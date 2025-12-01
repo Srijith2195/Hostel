@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if room else 'Add' }} Room - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}{{ 'Edit' if room else 'Add' }} Room{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>{{ 'Edit Room Details' if room else 'Add New Room' }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="roomForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="room_number" class="form-label">Room Number *</label>
+                                <input type="text" class="form-control" id="room_number" name="room_number" 
+                                       value="{{ room.room_number if room else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="floor" class="form-label">Floor *</label>
+                                <input type="number" class="form-control" id="floor" name="floor" 
+                                       value="{{ room.floor if room else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="capacity" class="form-label">Capacity *</label>
+                                <input type="number" class="form-control" id="capacity" name="capacity" 
+                                       value="{{ room.capacity if room else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="monthly_rent" class="form-label">Monthly Rent (₹) *</label>
+                                <input type="number" class="form-control" id="monthly_rent" name="monthly_rent" 
+                                       value="{{ room.monthly_rent if room else '' }}" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="occupied_beds" class="form-label">Occupied Beds</label>
+                                <input type="number" class="form-control" id="occupied_beds" name="occupied_beds" 
+                                       value="{{ room.occupied_beds if room else '0' }}" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="is_available" class="form-label">Availability</label>
+                                <select class="form-select" id="is_available" name="is_available">
+                                    <option value="1" {{ 'selected' if not room or room.is_available }}>Available</option>
+                                    <option value="0" {{ 'selected' if room and not room.is_available }}>Occupied</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="amenities" class="form-label">Amenities</label>
+                        <textarea class="form-control" id="amenities" name="amenities" rows="3" 
+                                  placeholder="List amenities separated by commas">{{ room.amenities if room else '' }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('rooms_list') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Rooms
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> {{ 'Update' if room else 'Add' }} Room
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('roomForm');
+    
+    form.addEventListener('submit', function (e) {
+        if (!validateForm('roomForm')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

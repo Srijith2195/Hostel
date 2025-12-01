@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Attendance Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Daily Attendance</h5>
+                <div>
+                    <button class="btn btn-success me-2" id="markAllPresent">
+                        <i class="bi bi-check-all"></i> Mark All Present
+                    </button>
+                    <button class="btn btn-primary" id="refreshAttendance">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                            <input type="date" class="form-control" id="attendanceDate" value="{{ today.strftime('%Y-%m-%d') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchAttendance" placeholder="Search residents...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary active" id="filterAll">All</button>
+                            <button class="btn btn-outline-success" id="filterPresent">Present</button>
+                            <button class="btn btn-outline-danger" id="filterAbsent">Absent</button>
+                            <button class="btn btn-outline-warning" id="filterLeave">Leave</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Residents List for Attendance -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="attendanceTable">
+                        <thead>
+                            <tr>
+                                <th>Resident</th>
+                                <th>Room</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for resident in residents %}
+                            <tr data-resident-id="{{ resident._id }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            {{ resident.name[0] }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ resident.name }}</h6>
+                                            <small class="text-muted">{{ resident.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if resident.room %}
+                                        <span class="badge bg-info">{{ resident.room.room_number }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No Room</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if resident.attendance %}
+                                        <span class="badge bg-{{ 'success' if resident.attendance.status == 'Present' else 'danger' if resident.attendance.status == 'Absent' else 'warning' }}">
+                                            {{ resident.attendance.status }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Not Marked</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-success mark-attendance" data-status="Present" data-resident-id="{{ resident._id }}">
+                                            <i class="bi bi-check"></i> Present
+                                        </button>
+                                        <button class="btn btn-sm btn-danger mark-attendance" data-status="Absent" data-resident-id="{{ resident._id }}">
+                                            <i class="bi bi-x"></i> Absent
+                                        </button>
+                                        <button class="btn btn-sm btn-warning mark-attendance" data-status="Leave" data-resident-id="{{ resident._id }}">
+                                            <i class="bi bi-calendar-x"></i> Leave
+                                        </button>
+                                        {% if resident.attendance %}
+                                        <button class="btn btn-sm btn-outline-warning edit-attendance" 
+                                                data-id="{{ resident.attendance._id }}" 
+                                                data-resident="{{ resident.name }}"
+                                                data-status="{{ resident.attendance.status }}"
+                                                data-remarks="{{ resident.attendance.remarks or '' }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ total_residents }}</h5>
+                                <p class="card-text">Total Residents</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <h5 class="card-title" id="presentCount">{{ present_count }}</h5>
+                                <p class="card-text">Present</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title" id="absentCount">{{ absent_count }}</h5>
+                                <p class="card-text">Absent</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body">
+                                <h5 class="card-title" id="leaveCount">{{ leave_count }}</h5>
+                                <p class="card-text">Leave</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Attendance Modal -->
+<div class="modal fade" id="editAttendanceModal" tabindex="-1" aria-labelledby="editAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAttendanceModalLabel">Edit Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAttendanceForm">
+                    <input type="hidden" id="editAttendanceId">
+                    <div class="mb-3">
+                        <label class="form-label">Resident</label>
+                        <input type="text" class="form-control" id="editResidentName" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status *</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="editStatus" id="editStatusPresent" value="Present">
+                                <label class="form-check-label" for="editStatusPresent">Present</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="editStatus" id="editStatusAbsent" value="Absent">
+                                <label class="form-check-label" for="editStatusAbsent">Absent</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="editStatus" id="editStatusLeave" value="Leave">
+                                <label class="form-check-label" for="editStatusLeave">Leave</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editRemarks" class="form-label">Remarks</label>
+                        <textarea class="form-control" id="editRemarks" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateAttendance">Update Attendance</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize search functionality
+document.addEventListener('DOMContentLoaded', function () {
+    initSearch('searchAttendance', 'attendanceTable');
+    
+    // Date filter
+    document.getElementById('attendanceDate').addEventListener('change', function() {
+        refreshAttendance();
+    });
+    
+    // Filter buttons
+    document.getElementById('filterAll').addEventListener('click', function() {
+        setActiveFilter(this);
+        filterAttendance('all');
+    });
+    
+    document.getElementById('filterPresent').addEventListener('click', function() {
+        setActiveFilter(this);
+        filterAttendance('Present');
+    });
+    
+    document.getElementById('filterAbsent').addEventListener('click', function() {
+        setActiveFilter(this);
+        filterAttendance('Absent');
+    });
+    
+    document.getElementById('filterLeave').addEventListener('click', function() {
+        setActiveFilter(this);
+        filterAttendance('Leave');
+    });
+    
+    // Mark attendance buttons
+    document.querySelectorAll('.mark-attendance').forEach(button => {
+        button.addEventListener('click', function() {
+            const residentId = this.getAttribute('data-resident-id');
+            const status = this.getAttribute('data-status');
+            const date = document.getElementById('attendanceDate').value;
+            
+            markAttendance(residentId, status, date);
+        });
+    });
+    
+    // Edit attendance button
+    document.querySelectorAll('.edit-attendance').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const resident = this.getAttribute('data-resident');
+            const status = this.getAttribute('data-status');
+            const remarks = this.getAttribute('data-remarks');
+            
+            document.getElementById('editAttendanceId').value = id;
+            document.getElementById('editResidentName').value = resident;
+            document.getElementById('editRemarks').value = remarks;
+            
+            // Set the correct radio button
+            document.querySelectorAll('input[name="editStatus"]').forEach(radio => {
+                radio.checked = radio.value === status;
+            });
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('editAttendanceModal'));
+            modal.show();
+        });
+    });
+    
+    // Update attendance
+    document.getElementById('updateAttendance').addEventListener('click', function() {
+        const attendanceId = document.getElementById('editAttendanceId').value;
+        const status = document.querySelector('input[name="editStatus"]:checked').value;
+        const remarks = document.getElementById('editRemarks').value;
+        
+        updateAttendance(attendanceId, status, remarks);
+    });
+    
+    // Refresh button
+    document.getElementById('refreshAttendance').addEventListener('click', function() {
+        refreshAttendance();
+    });
+    
+    // Mark all present
+    document.getElementById('markAllPresent').addEventListener('click', function() {
+        if (confirm('Are you sure you want to mark all residents as Present?')) {
+            markAllPresent();
+        }
+    });
+});
+
+function setActiveFilter(activeButton) {
+    // Remove active class from all buttons
+    document.querySelectorAll('#filterAll, #filterPresent, #filterAbsent, #filterLeave').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Add active class to clicked button
+    activeButton.classList.add('active');
+}
+
+function filterAttendance(status) {
+    const rows = document.querySelectorAll('#attendanceTable tbody tr');
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            const statusBadge = row.querySelector('td:nth-child(3) .badge');
+            if (statusBadge && statusBadge.textContent.trim() === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+function markAttendance(residentId, status, date) {
+    fetch('/attendance/mark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `resident_id=${residentId}&status=${status}&date=${date}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showMessage(data.message, 'success');
+            refreshAttendance();
+        } else {
+            showMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage('Error marking attendance: ' + error, 'error');
+    });
+}
+
+function updateAttendance(attendanceId, status, remarks) {
+    fetch(`/attendance/update/${attendanceId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${status}&remarks=${encodeURIComponent(remarks)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showMessage(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editAttendanceModal')).hide();
+            refreshAttendance();
+        } else {
+            showMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage('Error updating attendance: ' + error, 'error');
+    });
+}
+
+function markAllPresent() {
+    const date = document.getElementById('attendanceDate').value;
+    const rows = document.querySelectorAll('#attendanceTable tbody tr');
+    
+    let completed = 0;
+    const total = rows.length;
+    
+    rows.forEach(row => {
+        const residentId = row.getAttribute('data-resident-id');
+        markAttendance(residentId, 'Present', date);
+    });
+}
+
+function refreshAttendance() {
+    const date = document.getElementById('attendanceDate').value;
+    window.location.href = `/attendance?date=${date}`;
+}
+
+function showMessage(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    alertDiv.style = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Add to body
+    document.body.appendChild(alertDiv);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

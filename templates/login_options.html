@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Options - Hostel/PG Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .login-options-container {
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-header h2 {
+            color: #007bff;
+        }
+        .login-option-card {
+            text-align: center;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        .login-option-card:hover {
+            transform: translateY(-5px);
+        }
+        .admin-card {
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+        }
+        .resident-card {
+            background-color: #f8f9fa;
+            border: 2px solid #28a745;
+        }
+        .login-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .admin-icon {
+            color: #007bff;
+        }
+        .resident-icon {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-options-container">
+        <div class="login-header">
+            <h2><i class="bi bi-building"></i> Hostel/PG Management System</h2>
+            <p>Please select your login option</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="login-option-card admin-card">
+                    <div class="login-icon admin-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <h3>Admin Login</h3>
+                    <p>Login as an administrator to manage the hostel system</p>
+                    <a href="{{ url_for('admin_login') }}" class="btn btn-primary">Login as Admin</a>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="login-option-card resident-card">
+                    <div class="login-icon resident-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <h3>Resident Login</h3>
+                    <p>Login as a resident to access your dashboard</p>
+                    <a href="{{ url_for('resident_login') }}" class="btn btn-success">Login as Resident</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <small class="text-muted">© 2023 Hostel/PG Management System</small>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

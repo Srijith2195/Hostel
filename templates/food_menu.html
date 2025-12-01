@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Food Menu - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Food Menu Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Weekly Food Menu</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMenuItemModal">
+                    <i class="bi bi-plus-circle"></i> Add Menu Item
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchMenu" placeholder="Search menu items...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary active" data-filter="all">All</button>
+                            <button class="btn btn-outline-success" data-filter="veg">Vegetarian</button>
+                            <button class="btn btn-outline-danger" data-filter="non-veg">Non-Vegetarian</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Menu Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="menuTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Day</th>
+                                <th>Breakfast</th>
+                                <th>Lunch</th>
+                                <th>Dinner</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                            <tr>
+                                <td class="fw-bold">{{ day }}</td>
+                                <td>
+                                    {% for item in menu_items if item.day_of_week == day and item.meal_type == 'Breakfast' %}
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ item['items'] }}</span>
+                                            <div>
+                                                {% if item.is_veg %}
+                                                    <span class="badge bg-success">Veg</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Non-Veg</span>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-warning edit-menu" 
+                                                        data-id="{{ item.id }}" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editMenuItemModal">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in menu_items if item.day_of_week == day and item.meal_type == 'Lunch' %}
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ item['items'] }}</span>
+                                            <div>
+                                                {% if item.is_veg %}
+                                                    <span class="badge bg-success">Veg</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Non-Veg</span>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-warning edit-menu" 
+                                                        data-id="{{ item.id }}" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editMenuItemModal">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in menu_items if item.day_of_week == day and item.meal_type == 'Dinner' %}
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ item['items'] }}</span>
+                                            <div>
+                                                {% if item.is_veg %}
+                                                    <span class="badge bg-success">Veg</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Non-Veg</span>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-warning edit-menu" 
+                                                        data-id="{{ item.id }}" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editMenuItemModal">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Menu Item Modal -->
+<div class="modal fade" id="addMenuItemModal" tabindex="-1" aria-labelledby="addMenuItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMenuItemModalLabel">Add Menu Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMenuForm">
+                    <div class="mb-3">
+                        <label for="dayOfWeek" class="form-label">Day of Week *</label>
+                        <select class="form-select" id="dayOfWeek" required>
+                            <option value="">Select a day</option>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mealType" class="form-label">Meal Type *</label>
+                        <select class="form-select" id="mealType" required>
+                            <option value="">Select meal type</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="menuItems" class="form-label">Menu Items *</label>
+                        <input type="text" class="form-control" id="menuItems" placeholder="Enter menu items separated by commas" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dietary Preference *</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="dietaryPreference" id="veg" value="1" checked>
+                                <label class="form-check-label" for="veg">Vegetarian</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="dietaryPreference" id="nonVeg" value="0">
+                                <label class="form-check-label" for="nonVeg">Non-Vegetarian</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="effectiveDate" class="form-label">Effective Date *</label>
+                                <input type="date" class="form-control" id="effectiveDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="expiryDate" class="form-label">Expiry Date *</label>
+                                <input type="date" class="form-control" id="expiryDate" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveMenuItem">Save Menu Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Menu Item Modal -->
+<div class="modal fade" id="editMenuItemModal" tabindex="-1" aria-labelledby="editMenuItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMenuItemModalLabel">Edit Menu Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMenuForm">
+                    <input type="hidden" id="editMenuId">
+                    <div class="mb-3">
+                        <label for="editDayOfWeek" class="form-label">Day of Week *</label>
+                        <select class="form-select" id="editDayOfWeek" required>
+                            <option value="">Select a day</option>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editMealType" class="form-label">Meal Type *</label>
+                        <select class="form-select" id="editMealType" required>
+                            <option value="">Select meal type</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editMenuItems" class="form-label">Menu Items *</label>
+                        <input type="text" class="form-control" id="editMenuItems" placeholder="Enter menu items separated by commas" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dietary Preference *</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="editDietaryPreference" id="editVeg" value="1">
+                                <label class="form-check-label" for="editVeg">Vegetarian</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="editDietaryPreference" id="editNonVeg" value="0">
+                                <label class="form-check-label" for="editNonVeg">Non-Vegetarian</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEffectiveDate" class="form-label">Effective Date *</label>
+                                <input type="date" class="form-control" id="editEffectiveDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editExpiryDate" class="form-label">Expiry Date *</label>
+                                <input type="date" class="form-control" id="editExpiryDate" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateMenuItem">Update Menu Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize search functionality
+document.addEventListener('DOMContentLoaded', function () {
+    initSearch('searchMenu', 'menuTable');
+    
+    // Filter buttons
+    document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            filterMenu(filter);
+            
+            // Update active button
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+        });
+    });
+    
+    // Set default dates
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+    
+    document.getElementById('effectiveDate').valueAsDate = today;
+    document.getElementById('expiryDate').valueAsDate = nextWeek;
+    
+    // Save menu item
+    document.getElementById('saveMenuItem').addEventListener('click', function() {
+        // In a real implementation, this would save the menu item
+        alert('Menu item saved successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addMenuItemModal')).hide();
+    });
+    
+    // Update menu item
+    document.getElementById('updateMenuItem').addEventListener('click', function() {
+        // In a real implementation, this would update the menu item
+        alert('Menu item updated successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('editMenuItemModal')).hide();
+    });
+    
+    // Edit menu button
+    document.querySelectorAll('.edit-menu').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            // In a real implementation, this would populate the edit form with data
+            console.log('Editing menu item:', id);
+        });
+    });
+});
+
+function filterMenu(filter) {
+    const rows = document.querySelectorAll('#menuTable tbody tr');
+    rows.forEach(row => {
+        if (filter === 'all') {
+            row.style.display = '';
+        } else {
+            const vegBadges = row.querySelectorAll('.badge.bg-success');
+            const nonVegBadges = row.querySelectorAll('.badge.bg-danger');
+            
+            if (filter === 'veg' && vegBadges.length > 0) {
+                row.style.display = '';
+            } else if (filter === 'non-veg' && nonVegBadges.length > 0) {
+                row.style.display = '';
+            } else if (filter === 'veg' && vegBadges.length === 0 && nonVegBadges.length === 0) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

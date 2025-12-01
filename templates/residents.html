@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+
+{% block title %}Residents - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Residents Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>All Residents</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addResidentModal">
+                    <i class="bi bi-plus-circle"></i> Add New Resident
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchResidents" placeholder="Search residents...">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="residentsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Room</th>
+                                <th>Admission Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for resident in residents %}
+                            <tr>
+                                <td>{{ resident.name }}</td>
+                                <td>{{ resident.email }}</td>
+                                <td>{{ resident.phone }}</td>
+                                <td>
+                                    {% if resident.room %}
+                                        {{ resident.room.room_number }}
+                                    {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ resident.admission_date.strftime('%Y-%m-%d') if resident.admission_date else 'N/A' }}</td>
+                                <td>
+                                    {% if resident.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-warning edit-resident" 
+                                                data-id="{{ resident._id }}"
+                                                data-name="{{ resident.name }}"
+                                                data-email="{{ resident.email }}"
+                                                data-phone="{{ resident.phone }}"
+                                                data-emergency-contact-name="{{ resident.emergency_contact_name }}"
+                                                data-emergency-contact-phone="{{ resident.emergency_contact_phone }}"
+                                                data-street="{{ resident.street }}"
+                                                data-city="{{ resident.city }}"
+                                                data-state="{{ resident.state }}"
+                                                data-zip-code="{{ resident.zip_code }}"
+                                                data-room-id="{{ resident.room_id if resident.room_id else '' }}"
+                                                data-dietary-preference="{{ resident.dietary_preference }}"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editResidentModal">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-resident" 
+                                                data-id="{{ resident._id }}"
+                                                data-name="{{ resident.name }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Resident Modal -->
+<div class="modal fade" id="addResidentModal" tabindex="-1" aria-labelledby="addResidentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addResidentModalLabel">Add New Resident</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addResidentForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addName" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="addName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addEmail" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="addEmail" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addPhone" class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" id="addPhone" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addRoomId" class="form-label">Room</label>
+                                <select class="form-select" id="addRoomId">
+                                    <option value="">Select a room</option>
+                                    {% for room in rooms %}
+                                        <option value="{{ room._id }}">{{ room.room_number }} ({{ room.occupied_beds }}/{{ room.capacity }} occupied)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addEmergencyContactName" class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="addEmergencyContactName">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addEmergencyContactPhone" class="form-label">Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" id="addEmergencyContactPhone">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addDateOfBirth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="addDateOfBirth">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addAdmissionDate" class="form-label">Admission Date *</label>
+                                <input type="date" class="form-control" id="addAdmissionDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addStreet" class="form-label">Street</label>
+                                <input type="text" class="form-control" id="addStreet">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addCity" class="form-label">City</label>
+                                <input type="text" class="form-control" id="addCity">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addState" class="form-label">State</label>
+                                <input type="text" class="form-control" id="addState">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addZipCode" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="addZipCode">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addDietaryPreference" class="form-label">Dietary Preference</label>
+                                <select class="form-select" id="addDietaryPreference">
+                                    <option value="Vegetarian">Vegetarian</option>
+                                    <option value="Non-Vegetarian">Non-Vegetarian</option>
+                                    <option value="Vegan">Vegan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveResident">Save Resident</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Resident Modal -->
+<div class="modal fade" id="editResidentModal" tabindex="-1" aria-labelledby="editResidentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editResidentModalLabel">Edit Resident</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editResidentForm">
+                    <input type="hidden" id="editResidentId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editName" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="editName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEmail" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="editEmail" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editPhone" class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" id="editPhone" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editRoomId" class="form-label">Room</label>
+                                <select class="form-select" id="editRoomId">
+                                    <option value="">Select a room</option>
+                                    {% for room in rooms %}
+                                        <option value="{{ room._id }}">{{ room.room_number }} ({{ room.occupied_beds }}/{{ room.capacity }} occupied)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEmergencyContactName" class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="editEmergencyContactName">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEmergencyContactPhone" class="form-label">Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" id="editEmergencyContactPhone">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editDateOfBirth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="editDateOfBirth">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editAdmissionDate" class="form-label">Admission Date *</label>
+                                <input type="date" class="form-control" id="editAdmissionDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editStreet" class="form-label">Street</label>
+                                <input type="text" class="form-control" id="editStreet">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCity" class="form-label">City</label>
+                                <input type="text" class="form-control" id="editCity">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editState" class="form-label">State</label>
+                                <input type="text" class="form-control" id="editState">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editZipCode" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="editZipCode">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editDietaryPreference" class="form-label">Dietary Preference</label>
+                                <select class="form-select" id="editDietaryPreference">
+                                    <option value="Vegetarian">Vegetarian</option>
+                                    <option value="Non-Vegetarian">Non-Vegetarian</option>
+                                    <option value="Vegan">Vegan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateResident">Update Resident</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize search functionality
+document.addEventListener('DOMContentLoaded', function () {
+    initSearch('searchResidents', 'residentsTable');
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('addAdmissionDate').value = today;
+    
+    // Save resident
+    document.getElementById('saveResident').addEventListener('click', function() {
+        const formData = new FormData();
+        formData.append('name', document.getElementById('addName').value);
+        formData.append('email', document.getElementById('addEmail').value);
+        formData.append('phone', document.getElementById('addPhone').value);
+        formData.append('emergency_contact_name', document.getElementById('addEmergencyContactName').value);
+        formData.append('emergency_contact_phone', document.getElementById('addEmergencyContactPhone').value);
+        formData.append('date_of_birth', document.getElementById('addDateOfBirth').value);
+        formData.append('admission_date', document.getElementById('addAdmissionDate').value);
+        formData.append('street', document.getElementById('addStreet').value);
+        formData.append('city', document.getElementById('addCity').value);
+        formData.append('state', document.getElementById('addState').value);
+        formData.append('zip_code', document.getElementById('addZipCode').value);
+        formData.append('room_id', document.getElementById('addRoomId').value);
+        formData.append('dietary_preference', document.getElementById('addDietaryPreference').value);
+        
+        fetch('/add-resident', {
+            method: 'POST',
+            body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addResidentModal')).hide();
+                // Reload the page to show the new resident
+                location.reload();
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('Error adding resident: ' + error, 'error');
+        });
+    });
+    
+    // Edit resident button
+    document.querySelectorAll('.edit-resident').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const email = this.getAttribute('data-email');
+            const phone = this.getAttribute('data-phone');
+            const emergencyContactName = this.getAttribute('data-emergency-contact-name');
+            const emergencyContactPhone = this.getAttribute('data-emergency-contact-phone');
+            const street = this.getAttribute('data-street');
+            const city = this.getAttribute('data-city');
+            const state = this.getAttribute('data-state');
+            const zipCode = this.getAttribute('data-zip-code');
+            const roomId = this.getAttribute('data-room-id');
+            const dietaryPreference = this.getAttribute('data-dietary-preference');
+            
+            document.getElementById('editResidentId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editPhone').value = phone;
+            document.getElementById('editEmergencyContactName').value = emergencyContactName;
+            document.getElementById('editEmergencyContactPhone').value = emergencyContactPhone;
+            document.getElementById('editStreet').value = street;
+            document.getElementById('editCity').value = city;
+            document.getElementById('editState').value = state;
+            document.getElementById('editZipCode').value = zipCode;
+            document.getElementById('editRoomId').value = roomId;
+            document.getElementById('editDietaryPreference').value = dietaryPreference;
+        });
+    });
+    
+    // Update resident
+    document.getElementById('updateResident').addEventListener('click', function() {
+        const residentId = document.getElementById('editResidentId').value;
+        const formData = new FormData();
+        formData.append('name', document.getElementById('editName').value);
+        formData.append('email', document.getElementById('editEmail').value);
+        formData.append('phone', document.getElementById('editPhone').value);
+        formData.append('emergency_contact_name', document.getElementById('editEmergencyContactName').value);
+        formData.append('emergency_contact_phone', document.getElementById('editEmergencyContactPhone').value);
+        formData.append('date_of_birth', document.getElementById('editDateOfBirth').value);
+        formData.append('admission_date', document.getElementById('editAdmissionDate').value);
+        formData.append('street', document.getElementById('editStreet').value);
+        formData.append('city', document.getElementById('editCity').value);
+        formData.append('state', document.getElementById('editState').value);
+        formData.append('zip_code', document.getElementById('editZipCode').value);
+        formData.append('room_id', document.getElementById('editRoomId').value);
+        formData.append('dietary_preference', document.getElementById('editDietaryPreference').value);
+        
+        fetch(`/update-resident/${residentId}`, {
+            method: 'POST',
+            body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editResidentModal')).hide();
+                // Reload the page to show the updated resident
+                location.reload();
+            } else {
+                showMessage(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('Error updating resident: ' + error, 'error');
+        });
+    });
+    
+    // Delete resident
+    document.querySelectorAll('.delete-resident').forEach(button => {
+        button.addEventListener('click', function() {
+            const residentId = this.getAttribute('data-id');
+            const residentName = this.getAttribute('data-name');
+            
+            if (confirm(`Are you sure you want to delete resident ${residentName}?`)) {
+                fetch(`/delete-resident/${residentId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showMessage(data.message, 'success');
+                        // Reload the page to remove the resident
+                        location.reload();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error deleting resident: ' + error, 'error');
+                });
+            }
+        });
+    });
+});
+
+function showMessage(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    alertDiv.style = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Add to body
+    document.body.appendChild(alertDiv);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Residents</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ total_residents }}</h5>
+                <p class="card-text">Total Active Residents</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Rooms</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ total_rooms }}</h5>
+                <p class="card-text">Total Rooms</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Available</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ available_rooms }}</h5>
+                <p class="card-text">Available Rooms</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Complaints</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ total_complaints }}</h5>
+                <p class="card-text">Total Complaints</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Complaints</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_complaints %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Resident</th>
+                                    <th>Subject</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for complaint in recent_complaints %}
+                                <tr>
+                                    <td>
+                                        {% if complaint.resident %}
+                                            {{ complaint.resident.name }}
+                                        {% else %}
+                                            <span class="text-muted">Unknown Resident</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ complaint.subject }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if complaint.priority == 'High' or complaint.priority == 'Critical' else 'warning' if complaint.priority == 'Medium' else 'secondary' }}">
+                                            {{ complaint.priority }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if complaint.status == 'Resolved' else 'primary' if complaint.status == 'In Progress' else 'secondary' }}">
+                                            {{ complaint.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No recent complaints</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Active Notices</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_notices %}
+                    {% for notice in recent_notices %}
+                    <div class="alert alert-{{ 'danger' if notice.priority == 'Urgent' else 'warning' if notice.priority == 'High' else 'info' }}">
+                        <h6>{{ notice.title }}</h6>
+                        <p>{{ notice.content[:100] }}{% if notice.content|length > 100 %}...{% endif %}</p>
+                        <small>Posted on {{ notice.created_at.strftime('%Y-%m-%d') if notice.created_at else 'Unknown date' }}</small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No active notices</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Room Occupancy</h5>
+            </div>
+            <div class="card-body">
+                <div id="roomStatsChart">
+                    <p>Loading room statistics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Fetch room statistics via AJAX
+fetch('/api/rooms/stats')
+    .then(response => response.json())
+    .then(data => {
+        const chartHtml = `
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <h3>${data.total_rooms}</h3>
+                    <p>Total Rooms</p>
+                </div>
+                <div class="col-md-4">
+                    <h3>${data.available_rooms}</h3>
+                    <p>Available Rooms</p>
+                </div>
+                <div class="col-md-4">
+                    <h3>${data.occupancy_rate}%</h3>
+                    <p>Occupancy Rate</p>
+                </div>
+            </div>
+        `;
+        document.getElementById('roomStatsChart').innerHTML = chartHtml;
+    })
+    .catch(error => {
+        console.error('Error fetching room stats:', error);
+        document.getElementById('roomStatsChart').innerHTML = '<p>Error loading statistics</p>';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Complaints - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Complaints Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>All Complaints</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addComplaintModal">
+                    <i class="bi bi-plus-circle"></i> Register Complaint
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchComplaints" placeholder="Search complaints...">
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary active" data-filter="all">All</button>
+                            <button class="btn btn-outline-success" data-filter="open">Open</button>
+                            <button class="btn btn-outline-warning" data-filter="in-progress">In Progress</button>
+                            <button class="btn btn-outline-info" data-filter="resolved">Resolved</button>
+                            <button class="btn btn-outline-secondary" data-filter="closed">Closed</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="complaintsTable">
+                        <thead>
+                            <tr>
+                                <th>Complaint ID</th>
+                                <th>Resident</th>
+                                <th>Subject</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for complaint in complaints %}
+                            <tr>
+                                <td>{{ complaint.id }}</td>
+                                <td>
+                                    {% if complaint.resident %}
+                                        {{ complaint.resident.name }}
+                                    {% else %}
+                                        <span class="text-muted">Unknown Resident</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ complaint.subject[:30] }}{% if complaint.subject|length > 30 %}...{% endif %}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ complaint.category }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if complaint.priority == 'Critical' or complaint.priority == 'High' else 'warning' if complaint.priority == 'Medium' else 'secondary' }}">
+                                        {{ complaint.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if complaint.status == 'Resolved' else 'primary' if complaint.status == 'In Progress' else 'info' if complaint.status == 'Open' else 'secondary' }}">
+                                        {{ complaint.status }}
+                                    </span>
+                                </td>
+                                <td>{{ complaint.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary view-complaint" 
+                                                data-id="{{ complaint.id }}" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#viewComplaintModal">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning edit-complaint" 
+                                                data-id="{{ complaint.id }}" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editComplaintModal">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ total_complaints }}</h5>
+                                <p class="card-text">Total Complaints</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ open_complaints }}</h5>
+                                <p class="card-text">Open</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ in_progress_complaints }}</h5>
+                                <p class="card-text">In Progress</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ resolved_complaints }}</h5>
+                                <p class="card-text">Resolved</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Complaint Modal -->
+<div class="modal fade" id="addComplaintModal" tabindex="-1" aria-labelledby="addComplaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addComplaintModalLabel">Register New Complaint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addComplaintForm">
+                    <div class="mb-3">
+                        <label for="residentSelect" class="form-label">Resident *</label>
+                        <select class="form-select" id="residentSelect" required>
+                            <option value="">Select a resident</option>
+                            {% for resident in residents %}
+                                <option value="{{ resident._id }}">{{ resident.name }} ({{ resident.room.room_number if resident.room else 'No Room' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject *</label>
+                        <input type="text" class="form-control" id="subject" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category *</label>
+                        <select class="form-select" id="category" required>
+                            <option value="">Select a category</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Cleanliness">Cleanliness</option>
+                            <option value="Noise">Noise</option>
+                            <option value="Food">Food</option>
+                            <option value="Security">Security</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority *</label>
+                        <select class="form-select" id="priority" required>
+                            <option value="">Select priority</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="description" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveComplaint">Register Complaint</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Complaint Modal -->
+<div class="modal fade" id="viewComplaintModal" tabindex="-1" aria-labelledby="viewComplaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewComplaintModalLabel">Complaint Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="complaintDetails">
+                    <!-- Complaint details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Complaint Modal -->
+<div class="modal fade" id="editComplaintModal" tabindex="-1" aria-labelledby="editComplaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editComplaintModalLabel">Update Complaint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editComplaintForm">
+                    <input type="hidden" id="editComplaintId">
+                    <div class="mb-3">
+                        <label class="form-label">Resident</label>
+                        <input type="text" class="form-control" id="editResidentName" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="editSubject" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editStatus" class="form-label">Status *</label>
+                        <select class="form-select" id="editStatus" required>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editAssignedTo" class="form-label">Assigned To</label>
+                        <input type="text" class="form-control" id="editAssignedTo">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editResolutionNotes" class="form-label">Resolution Notes</label>
+                        <textarea class="form-control" id="editResolutionNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateComplaint">Update Complaint</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize search functionality
+document.addEventListener('DOMContentLoaded', function () {
+    initSearch('searchComplaints', 'complaintsTable');
+    
+    // Filter buttons
+    document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            filterComplaints(filter);
+            
+            // Update active button
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+        });
+    });
+    
+    // View complaint button
+    document.querySelectorAll('.view-complaint').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            // In a real implementation, this would load the complaint details
+            document.getElementById('complaintDetails').innerHTML = `
+                <p><strong>Complaint ID:</strong> ${id}</p>
+                <p><strong>Status:</strong> Loading...</p>
+                <p><strong>Description:</strong> Loading...</p>
+            `;
+        });
+    });
+    
+    // Edit complaint button
+    document.querySelectorAll('.edit-complaint').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            // Load complaint details for editing
+            loadComplaintDetails(id);
+        });
+    });
+
+    // Save complaint
+    document.getElementById('saveComplaint').addEventListener('click', function() {
+        // In a real implementation, this would save the complaint
+        alert('Complaint registered successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addComplaintModal')).hide();
+    });
+
+    // Update complaint
+    document.getElementById('updateComplaint').addEventListener('click', function() {
+        const complaintId = document.getElementById('editComplaintId').value;
+        const status = document.getElementById('editStatus').value;
+        const assignedTo = document.getElementById('editAssignedTo').value;
+        const resolutionNotes = document.getElementById('editResolutionNotes').value;
+        
+        // Make AJAX call to update complaint
+        const formData = new FormData();
+        formData.append('status', status);
+        formData.append('assigned_to', assignedTo);
+        formData.append('resolution_notes', resolutionNotes);
+        
+        fetch(`/update-complaint-status/${complaintId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Complaint updated successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('editComplaintModal')).hide();
+                // Reload the page to reflect changes
+                location.reload();
+            } else {
+                alert('Error updating complaint: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the complaint.');
+        });
+    });
+});
+
+function filterComplaints(status) {
+    const rows = document.querySelectorAll('#complaintsTable tbody tr');
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            const statusCell = row.querySelector('td:nth-child(6) .badge');
+            if (statusCell && statusCell.textContent.trim().toLowerCase() === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+function loadComplaintDetails(complaintId) {
+    // Set the complaint ID in the hidden field
+    document.getElementById('editComplaintId').value = complaintId;
+    
+    // In a production environment, you would fetch the actual complaint data from the server
+    // For now, we'll just clear the form fields
+    document.getElementById('editStatus').value = 'Open';
+    document.getElementById('editAssignedTo').value = '';
+    document.getElementById('editResolutionNotes').value = '';
+    
+    // Note: In a full implementation, you would make an AJAX call to get the complaint details
+    // and populate the form with the current values
+}
+</script>
+{% endblock %}

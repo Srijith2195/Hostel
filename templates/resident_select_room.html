@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Select Room - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Select Room{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Available Rooms</h5>
+                <p class="text-muted">Please select a room from the available options below.</p>
+            </div>
+            <div class="card-body">
+                {% if rooms %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Room Number</th>
+                                    <th>Floor</th>
+                                    <th>Capacity</th>
+                                    <th>Occupied Beds</th>
+                                    <th>Amenities</th>
+                                    <th>Monthly Rent</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for room in rooms %}
+                                <tr>
+                                    <td>{{ room.room_number }}</td>
+                                    <td>{{ room.floor }}</td>
+                                    <td>{{ room.capacity }}</td>
+                                    <td>{{ room.occupied_beds }}</td>
+                                    <td>{{ room.amenities }}</td>
+                                    <td>₹{{ room.monthly_rent }}</td>
+                                    <td>
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="room_id" value="{{ room._id }}">
+                                            <button type="submit" class="btn btn-sm btn-primary">Select Room</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p>No rooms are currently available. Please check back later or contact the administrator.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

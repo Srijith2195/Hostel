@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Resident Dashboard - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Welcome, {{ resident.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Profile Card -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Your Profile</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ resident.name }}</p>
+                <p><strong>Email:</strong> {{ resident.email }}</p>
+                <p><strong>Phone:</strong> {{ resident.phone }}</p>
+                <p><strong>Room:</strong> 
+                    {% if room %}
+                        {{ room.room_number }} ({{ room.floor }} Floor)
+                    {% else %}
+                        <span class="text-muted">Not assigned</span>
+                        <a href="{{ url_for('resident_select_room') }}" class="btn btn-sm btn-primary ms-2">Select Room</a>
+                    {% endif %}
+                </p>
+                <p><strong>Admission Date:</strong> 
+                    {% if resident.admission_date %}
+                        {{ resident.admission_date.strftime('%Y-%m-%d') }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('resident_profile') }}" class="btn btn-primary">Edit Profile</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="col-md-8">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">₹{{ total_pending_amount }}</h5>
+                        <p class="card-text">Total Pending</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ pending_fees|length }}</h5>
+                        <p class="card-text">Pending Fees</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ complaints|length }}</h5>
+                        <p class="card-text">Your Complaints</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs for Fees and Complaints -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="residentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="fees-tab" data-bs-toggle="tab" data-bs-target="#fees" type="button" role="tab">Your Fees</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints" type="button" role="tab">Your Complaints</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="residentTabsContent">
+                    <!-- Fees Tab -->
+                    <div class="tab-pane fade show active" id="fees" role="tabpanel">
+                        <ul class="nav nav-tabs mb-3" id="feeTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">Pending Fees</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#paid" type="button" role="tab">Payment History</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="feeTabsContent">
+                            <!-- Pending Fees Tab -->
+                            <div class="tab-pane fade show active" id="pending" role="tabpanel">
+                                {% if pending_fees %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fee Type</th>
+                                                    <th>Amount</th>
+                                                    <th>Due Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for fee in pending_fees %}
+                                                <tr>
+                                                    <td>{{ fee.fee_type }}</td>
+                                                    <td>₹{{ fee.amount }}</td>
+                                                    <td>{{ fee.due_date.strftime('%Y-%m-%d') }}</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-primary pay-fee" data-id="{{ fee._id }}">Pay Now</button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">No pending fees. Great job staying current!</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Paid Fees Tab -->
+                            <div class="tab-pane fade" id="paid" role="tabpanel">
+                                {% if paid_fees %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fee Type</th>
+                                                    <th>Amount</th>
+                                                    <th>Due Date</th>
+                                                    <th>Paid Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for fee in paid_fees %}
+                                                <tr>
+                                                    <td>{{ fee.fee_type }}</td>
+                                                    <td>₹{{ fee.amount }}</td>
+                                                    <td>{{ fee.due_date.strftime('%Y-%m-%d') }}</td>
+                                                    <td>{{ fee.paid_date.strftime('%Y-%m-%d') if fee.paid_date else 'N/A' }}</td>
+                                                    <td>
+                                                        <span class="badge bg-success">{{ fee.status }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">No payment history available.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Complaints Tab -->
+                    <div class="tab-pane fade" id="complaints" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Your Complaints</h5>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#complaintModal">
+                                <i class="bi bi-plus-circle"></i> New Complaint
+                            </button>
+                        </div>
+                        
+                        {% if complaints %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>Category</th>
+                                            <th>Priority</th>
+                                            <th>Status</th>
+                                            <th>Submitted Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for complaint in complaints %}
+                                        <tr>
+                                            <td>{{ complaint.subject }}</td>
+                                            <td>{{ complaint.category }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if complaint.priority == 'High' or complaint.priority == 'Critical' %}danger{% elif complaint.priority == 'Medium' %}warning{% else %}secondary{% endif %}">
+                                                    {{ complaint.priority }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if complaint.status == 'Open' %}danger{% elif complaint.status == 'In Progress' %}warning{% elif complaint.status == 'Resolved' %}success{% else %}secondary{% endif %}">
+                                                    {{ complaint.status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ complaint.created_at.strftime('%Y-%m-%d') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">You haven't submitted any complaints yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notices and Complaints Section -->
+<div class="row mt-4">
+    <!-- Active Notices -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Latest Notices</h5>
+            </div>
+            <div class="card-body">
+                {% if active_notices %}
+                    {% for notice in active_notices %}
+                    <div class="mb-3 pb-3 border-bottom">
+                        <h6>{{ notice.title }}</h6>
+                        <p class="text-muted small">{{ notice.created_at.strftime('%Y-%m-%d') }} by {{ notice.author }}</p>
+                        <p>{{ notice.content }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No active notices at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Your Complaints -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Your Complaints</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#complaintModal">
+                    <i class="bi bi-plus-circle"></i> New Complaint
+                </button>
+            </div>
+            <div class="card-body">
+                {% if complaints %}
+                    {% for complaint in complaints %}
+                    <div class="mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between">
+                            <h6>{{ complaint.subject }}</h6>
+                            <span class="badge bg-{% if complaint.status == 'Open' %}danger{% elif complaint.status == 'In Progress' %}warning{% else %}success{% endif %}">
+                                {{ complaint.status }}
+                            </span>
+                        </div>
+                        <p class="text-muted small">{{ complaint.created_at.strftime('%Y-%m-%d') }}</p>
+                        <p>{{ complaint.description }}</p>
+                        {% if complaint.resolution_notes %}
+                        <div class="alert alert-info">
+                            <strong>Resolution:</strong> {{ complaint.resolution_notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">You haven't submitted any complaints yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complaint Modal -->
+<div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="complaintModalLabel">Submit New Complaint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="complaintForm">
+                    <div class="mb-3">
+                        <label for="complaintSubject" class="form-label">Subject *</label>
+                        <input type="text" class="form-control" id="complaintSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="complaintDescription" class="form-label">Description *</label>
+                        <textarea class="form-control" id="complaintDescription" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="complaintCategory" class="form-label">Category *</label>
+                        <select class="form-select" id="complaintCategory" required>
+                            <option value="">Select a category</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Noise">Noise</option>
+                            <option value="Food">Food</option>
+                            <option value="Housekeeping">Housekeeping</option>
+                            <option value="Technical">Technical</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="complaintPriority" class="form-label">Priority *</label>
+                        <select class="form-select" id="complaintPriority" required>
+                            <option value="">Select priority</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="submitComplaint">Submit Complaint</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Handle fee payment
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('pay-fee')) {
+        const feeId = e.target.getAttribute('data-id');
+        
+        if (confirm('Are you sure you want to pay this fee?')) {
+            fetch(`/resident/pay-fee/${feeId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Fee paid successfully!');
+                    location.reload();
+                } else {
+                    alert('Error paying fee: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your payment.');
+            });
+        }
+    }
+});
+
+// Handle complaint submission
+document.getElementById('submitComplaint').addEventListener('click', function() {
+    const subject = document.getElementById('complaintSubject').value;
+    const description = document.getElementById('complaintDescription').value;
+    const category = document.getElementById('complaintCategory').value;
+    const priority = document.getElementById('complaintPriority').value;
+    
+    if (!subject || !description || !category || !priority) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('subject', subject);
+    formData.append('description', description);
+    formData.append('category', category);
+    formData.append('priority', priority);
+    
+    fetch('/resident/submit-complaint', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Complaint submitted successfully!');
+            // Close modal and reset form
+            document.getElementById('complaintModal').querySelector('.btn-close').click();
+            document.getElementById('complaintForm').reset();
+            // Reload to show new complaint
+            location.reload();
+        } else {
+            alert('Error submitting complaint: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting your complaint.');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Chats - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Messaging System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Messages</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <!-- Conversations List -->
+                    <div class="col-md-4 border-end">
+                        <div class="p-3 border-bottom">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="searchConversations" placeholder="Search conversations...">
+                            </div>
+                        </div>
+                        
+                        <div class="conversation-list" style="height: calc(100vh - 200px); overflow-y: auto;">
+                            {% for i in range(10) %}
+                            <div class="conversation-item border-bottom p-3 {{ 'bg-light' if i == 0 }}">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            {{ 'R' if i == 0 else 'S' }}
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-0">{{ 'John Doe' if i == 0 else 'Resident ' ~ (i + 1) }}</h6>
+                                            <small class="text-muted">{{ '10:30 AM' if i % 3 == 0 else 'Yesterday' if i % 3 == 1 else '2 days ago' }}</small>
+                                        </div>
+                                        <p class="mb-0 text-truncate" style="max-width: 200px;">
+                                            {{ 'Hello, I wanted to ask about...' if i == 0 else 'Message content ' ~ (i + 1) ~ '...' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Window -->
+                    <div class="col-md-8">
+                        <div class="d-flex flex-column h-100">
+                            <!-- Chat Header -->
+                            <div class="border-bottom p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        R
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">John Doe</h6>
+                                        <small class="text-muted">Online</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Messages Area -->
+                            <div class="flex-grow-1 p-3" style="height: calc(100vh - 300px); overflow-y: auto;" id="messagesContainer">
+                                <!-- Received Message -->
+                                <div class="d-flex mb-3">
+                                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                        R
+                                    </div>
+                                    <div class="bg-light rounded p-2" style="max-width: 70%;">
+                                        <p class="mb-1">Hello! I wanted to ask about the maintenance schedule for this month.</p>
+                                        <small class="text-muted">10:25 AM</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sent Message -->
+                                <div class="d-flex justify-content-end mb-3">
+                                    <div class="bg-primary text-white rounded p-2" style="max-width: 70%;">
+                                        <p class="mb-1">Hi John, the maintenance is scheduled for next week. We'll send a notice with the exact date.</p>
+                                        <small class="text-white-50">10:27 AM</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Received Message -->
+                                <div class="d-flex mb-3">
+                                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                        R
+                                    </div>
+                                    <div class="bg-light rounded p-2" style="max-width: 70%;">
+                                        <p class="mb-1">Thank you for the information. I'll be waiting for the notice.</p>
+                                        <small class="text-muted">10:28 AM</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Message Input -->
+                            <div class="border-top p-3">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Type your message...">
+                                    <button class="btn btn-primary" type="button">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize search functionality
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('searchConversations').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const conversations = document.querySelectorAll('.conversation-item');
+        
+        conversations.forEach(conversation => {
+            const text = conversation.textContent.toLowerCase();
+            conversation.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+    
+    // Conversation click handler
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active class from all items
+            document.querySelectorAll('.conversation-item').forEach(i => {
+                i.classList.remove('bg-light');
+            });
+            
+            // Add active class to clicked item
+            this.classList.add('bg-light');
+            
+            // In a real implementation, this would load the conversation messages
+            console.log('Loading conversation');
+        });
+    });
+});
+</script>
+{% endblock %}

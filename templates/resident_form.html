@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if resident else 'Add' }} Resident - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}{{ 'Edit' if resident else 'Add' }} Resident{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>{{ 'Edit Resident Details' if resident else 'Add New Resident' }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="residentForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ resident.name if resident else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ resident.email if resident else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone *</label>
+                                <input type="text" class="form-control" id="phone" name="phone" 
+                                       value="{{ resident.phone if resident else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth *</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ resident.date_of_birth.strftime('%Y-%m-%d') if resident and resident.date_of_birth else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emergency_contact_name" class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name" 
+                                       value="{{ resident.emergency_contact_name if resident else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emergency_contact_phone" class="form-label">Emergency Contact Phone</label>
+                                <input type="text" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone" 
+                                       value="{{ resident.emergency_contact_phone if resident else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="dietary_preference" class="form-label">Dietary Preference</label>
+                                <select class="form-select" id="dietary_preference" name="dietary_preference">
+                                    <option value="Vegetarian" {{ 'selected' if resident and resident.dietary_preference == 'Vegetarian' }}>Vegetarian</option>
+                                    <option value="Non-Vegetarian" {{ 'selected' if resident and resident.dietary_preference == 'Non-Vegetarian' }}>Non-Vegetarian</option>
+                                    <option value="Vegan" {{ 'selected' if resident and resident.dietary_preference == 'Vegan' }}>Vegan</option>
+                                    <option value="Other" {{ 'selected' if resident and resident.dietary_preference == 'Other' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="room_id" class="form-label">Assign Room</label>
+                                <select class="form-select" id="room_id" name="room_id">
+                                    <option value="">Select a room</option>
+                                    {% for room in rooms %}
+                                        <option value="{{ room._id }}" {{ 'selected' if resident and resident.room_id == room._id }}>{{ room.room_number }} ({{ room.occupied_beds }}/{{ room.capacity }} occupied)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="street" class="form-label">Street Address</label>
+                                <input type="text" class="form-control" id="street" name="street" 
+                                       value="{{ resident.street if resident else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" 
+                                       value="{{ resident.city if resident else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <input type="text" class="form-control" id="state" name="state" 
+                                       value="{{ resident.state if resident else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="zip_code" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="zip_code" name="zip_code" 
+                                       value="{{ resident.zip_code if resident else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                   {{ 'checked' if not resident or resident.is_active }}>
+                            <label class="form-check-label" for="is_active">
+                                Active Resident
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('residents_list') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Residents
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> {{ 'Update' if resident else 'Add' }} Resident
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('residentForm');
+    
+    form.addEventListener('submit', function (e) {
+        if (!validateForm('residentForm')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

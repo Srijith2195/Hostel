@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}Fees - Hostel/PG Management System{% endblock %}
+
+{% block page_title %}Fees Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Fee Records</h5>
+                <div class="btn-group">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateFeesModal">
+                        <i class="bi bi-currency-rupee"></i> Generate Monthly Fees
+                    </button>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFeeModal">
+                        <i class="bi bi-plus-circle"></i> Add Fee Record
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchFees" placeholder="Search fees...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="monthFilter">
+                            <option value="">All Months</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="yearFilter">
+                            <option value="">All Years</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary active" data-filter="all">All</button>
+                            <button class="btn btn-outline-success" data-filter="paid">Paid</button>
+                            <button class="btn btn-outline-warning" data-filter="pending">Pending</button>
+                            <button class="btn btn-outline-danger" data-filter="overdue">Overdue</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="feesTable">
+                        <thead>
+                            <tr>
+                                <th>Fee ID</th>
+                                <th>Resident</th>
+                                <th>Month</th>
+                                <th>Year</th>
+                                <th>Amount (₹)</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Payment Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fee in fees %}
+                            <tr>
+                                <td>{{ fee.id }}</td>
+                                <td>
+                                    {% if fee.resident %}
+                                        {{ fee.resident.name }}
+                                    {% else %}
+                                        <span class="text-muted">Unknown Resident</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ fee.month }}</td>
+                                <td>{{ fee.year }}</td>
+                                <td>{{ fee.amount }}</td>
+                                <td>{{ fee.due_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if fee.status == 'Paid' else 'warning' if fee.status == 'Pending' else 'danger' }}">
+                                        {{ fee.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if fee.paid_date %}
+                                        {{ fee.paid_date.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        <span class="text-muted">Not paid</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary view-fee" 
+                                                data-id="{{ fee.id }}" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#viewFeeModal">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning edit-fee" 
+                                                data-id="{{ fee.id }}" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editFeeModal">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">₹{{ total_amount }}</h5>
+                                <p class="card-text">Total Fees</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <h5 class="card-title">₹{{ paid_amount }}</h5>
+                                <p class="card-text">Collected</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body">
+                                <h5 class="card-title">₹{{ pending_amount }}</h5>
+                                <p class="card-text">Pending</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title">₹{{ overdue_amount }}</h5>
+                                <p class="card-text">Overdue</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Fees Modal -->
+<div class="modal fade" id="generateFeesModal" tabindex="-1" aria-labelledby="generateFeesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generateFeesModalLabel">Generate Monthly Fees</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="generateFeesForm">
+                    <div class="mb-3">
+                        <label for="generateMonth" class="form-label">Month *</label>
+                        <select class="form-select" id="generateMonth" required>
+                            <option value="">Select a month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="generateYear" class="form-label">Year *</label>
+                        <select class="form-select" id="generateYear" required>
+                            <option value="">Select a year</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="amountPerResident" class="form-label">Amount per Resident (₹) *</label>
+                        <input type="number" class="form-control" id="amountPerResident" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="generateFees">Generate Fees</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Fee Modal -->
+<div class="modal fade" id="addFeeModal" tabindex="-1" aria-labelledby="addFeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFeeModalLabel">Add Fee Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addFeeForm">
+                    <div class="mb-3">
+                        <label for="residentSelect" class="form-label">Resident *</label>
+                        <select class="form-select" id="residentSelect" required>
+                            <option value="">Select a resident</option>
+                            {% for resident in residents %}
+                                <option value="{{ resident._id }}">{{ resident.name }} ({{ resident.room.room_number if resident.room else 'No Room' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="feeMonth" class="form-label">Month *</label>
+                                <select class="form-select" id="feeMonth" required>
+                                    <option value="">Select a month</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="feeYear" class="form-label">Year *</label>
+                                <select class="form-select" id="feeYear" required>
+                                    <option value="">Select a year</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feeAmount" class="form-label">Amount (₹) *</label>
+                        <input type="number" class="form-control" id="feeAmount" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="dueDate" class="form-label">Due Date *</label>
+                        <input type="date" class="form-control" id="dueDate" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveFee">Add Fee Record</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Fee Modal -->
+<div class="modal fade" id="viewFeeModal" tabindex="-1" aria-labelledby="viewFeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewFeeModalLabel">Fee Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="feeDetails">
+                    <!-- Fee details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Fee Modal -->
+<div class="modal fade" id="editFeeModal" tabindex="-1" aria-labelledby="editFeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFeeModalLabel">Update Fee Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editFeeForm">
+                    <input type="hidden" id="editFeeId">
+                    <div class="mb-3">
+                        <label class="form-label">Resident</label>
+                        <input type="text" class="form-control" id="editResidentName" readonly>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Month</label>
+                                <input type="text" class="form-control" id="editFeeMonth" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Year</label>
+                                <input type="text" class="form-control" id="editFeeYear" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Amount (₹)</label>
+                        <input type="text" class="form-control" id="editFeeAmount" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editFeeStatus" class="form-label">Status *</label>
+                        <select class="form-select" id="editFeeStatus" required>
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editPaymentMethod" class="form-label">Payment Method</label>
+                        <select class="form-select" id="editPaymentMethod">
+                            <option value="">Select payment method</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Online Payment">Online Payment</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editTransactionId" class="form-label">Transaction ID</label>
+                        <input type="text" class="form-control" id="editTransactionId">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editPaidDate" class="form-label">Payment Date</label>
+                        <input type="date" class="form-control" id="editPaidDate">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateFee">Update Fee Record</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize search functionality
+document.addEventListener('DOMContentLoaded', function () {
+    initSearch('searchFees', 'feesTable');
+    
+    // Filter buttons
+    document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            filterFees(filter);
+            
+            // Update active button
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+        });
+    });
+    
+    // Month and year filters
+    document.getElementById('monthFilter').addEventListener('change', filterByDate);
+    document.getElementById('yearFilter').addEventListener('change', filterByDate);
+    
+    // View fee button
+    document.querySelectorAll('.view-fee').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            // In a real implementation, this would load the fee details
+            document.getElementById('feeDetails').innerHTML = `
+                <p><strong>Fee ID:</strong> ${id}</p>
+                <p><strong>Status:</strong> Loading...</p>
+                <p><strong>Amount:</strong> Loading...</p>
+            `;
+        });
+    });
+    
+    // Edit fee button
+    document.querySelectorAll('.edit-fee').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            // In a real implementation, this would populate the edit form with data
+            document.getElementById('editFeeId').value = id;
+        });
+    });
+    
+    // Generate fees
+    document.getElementById('generateFees').addEventListener('click', function() {
+        // In a real implementation, this would generate fees for all residents
+        alert('Fees generated successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('generateFeesModal')).hide();
+    });
+    
+    // Save fee
+    document.getElementById('saveFee').addEventListener('click', function() {
+        // In a real implementation, this would save the fee record
+        alert('Fee record added successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addFeeModal')).hide();
+    });
+    
+    // Update fee
+    document.getElementById('updateFee').addEventListener('click', function() {
+        // In a real implementation, this would update the fee record
+        alert('Fee record updated successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('editFeeModal')).hide();
+    });
+});
+
+function filterFees(status) {
+    const rows = document.querySelectorAll('#feesTable tbody tr');
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            const statusCell = row.querySelector('td:nth-child(7) .badge');
+            if (statusCell && statusCell.textContent.trim() === status.charAt(0).toUpperCase() + status.slice(1)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+function filterByDate() {
+    const month = document.getElementById('monthFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    
+    const rows = document.querySelectorAll('#feesTable tbody tr');
+    rows.forEach(row => {
+        const rowMonth = row.cells[2].textContent;
+        const rowYear = row.cells[3].textContent;
+        
+        let show = true;
+        
+        if (month && rowMonth !== month) {
+            show = false;
+        }
+        
+        if (year && rowYear !== year) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}
